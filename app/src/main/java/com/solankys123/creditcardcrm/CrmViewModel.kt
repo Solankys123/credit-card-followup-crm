@@ -13,6 +13,10 @@ class CrmViewModel(private val repository: CrmRepository) : ViewModel() {
 
     private val _followUps = MutableStateFlow<List<FollowUp>>(emptyList())
     private val _activities = MutableStateFlow<List<ActivityEvent>>(emptyList())
+    private val _documents = MutableStateFlow<List<DocumentItem>>(emptyList())
+    private val _issues = MutableStateFlow<List<IssueItem>>(emptyList())
+    val documents: StateFlow<List<DocumentItem>> = _documents.asStateFlow()
+    val issues: StateFlow<List<IssueItem>> = _issues.asStateFlow()
     val activities: StateFlow<List<ActivityEvent>> = _activities.asStateFlow()
     val followUps: StateFlow<List<FollowUp>> = _followUps.asStateFlow()
 
@@ -44,6 +48,41 @@ class CrmViewModel(private val repository: CrmRepository) : ViewModel() {
         refresh()
     }
 
+
+    fun loadDocumentsAndIssues(customerId: Long) = viewModelScope.launch {
+        _documents.value = repository.documents(customerId)
+        _issues.value = repository.issues(customerId)
+    }
+
+    fun addDocument(item: DocumentItem) = viewModelScope.launch {
+        repository.addDocument(item)
+        loadDocumentsAndIssues(item.customerId)
+    }
+
+    fun updateDocument(item: DocumentItem) = viewModelScope.launch {
+        repository.updateDocument(item)
+        loadDocumentsAndIssues(item.customerId)
+    }
+
+    fun deleteDocument(item: DocumentItem) = viewModelScope.launch {
+        repository.deleteDocument(item)
+        loadDocumentsAndIssues(item.customerId)
+    }
+
+    fun addIssue(item: IssueItem) = viewModelScope.launch {
+        repository.addIssue(item)
+        loadDocumentsAndIssues(item.customerId)
+    }
+
+    fun updateIssue(item: IssueItem) = viewModelScope.launch {
+        repository.updateIssue(item)
+        loadDocumentsAndIssues(item.customerId)
+    }
+
+    fun deleteIssue(item: IssueItem) = viewModelScope.launch {
+        repository.deleteIssue(item)
+        loadDocumentsAndIssues(item.customerId)
+    }
 
     fun loadActivities(customerId: Long) = viewModelScope.launch {
         _activities.value = repository.activities(customerId)
