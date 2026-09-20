@@ -35,36 +35,21 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-private data class Customer(
-    val name: String,
-    val inquiry: String,
-    val status: String,
-    val nextAction: String,
-    val priority: String,
-    val note: String
-)
-
 private class CrmViewModel : ViewModel() {
-    var customers by mutableStateOf(
-        listOf(
-            Customer("Rahul Sharma", "Long Inquiry", "Documents Pending", "Call today 4:00 PM", "HIGH", "Salary slip pending"),
-            Customer("Amit Verma", "Short Inquiry", "Application Started", "Follow up today", "MEDIUM", "Customer asked for callback"),
-            Customer("Neha Singh", "Long Inquiry", "Verification", "Check status", "MEDIUM", "YONO available")
-        )
-    )
+    var customers by mutableStateOf(SampleData.customers)
         private set
 
     fun addCustomer(name: String, inquiry: String) {
         if (name.isBlank()) return
-        val newCustomer = Customer(
-            name.trim(),
-            inquiry,
-            "New Inquiry",
-            "Contact customer",
-            "MEDIUM",
-            ""
-        )
-        customers = listOf(newCustomer) + customers
+        customers = listOf(
+            CustomerRecord(
+                name = name.trim(),
+                inquiryType = inquiry,
+                status = "New Inquiry",
+                priority = "MEDIUM",
+                nextAction = "Contact customer"
+            )
+        ) + customers
     }
 }
 
@@ -77,55 +62,69 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun CreditCardCrmApp(vm: CrmViewModel = viewModel()) {
+    var screen by remember { mutableStateOf("dashboard") }
+    var selectedCustomer by remember { mutableStateOf<CustomerRecord?>(null) }
     var showAdd by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
 
     MaterialTheme {
-        Scaffold(
-            topBar = { TopAppBar(title = { Text("Credit Card CRM") }) },
-            floatingActionButton = {
-                FloatingActionButton(onClick = { showAdd = true }) { Text("+") }
-            }
-        ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp)
-            ) {
-                Text("Today's Work", style = MaterialTheme.typography.headlineSmall)
-                Spacer(Modifier.height(8.dp))
-
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    StatCard("Overdue", "2")
-                    StatCard("Follow-ups", "5")
-                    StatCard("Pending", "3")
-                }
-
-                Spacer(Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Search customer") }
+        when (screen) {
+            "customers" -> {
+                CustomerListScreen(
+                    customers = vm.customers,
+                    query = query,
+                    onQueryChange = { query = it },
+                    onBack = { screen = "dashboard" },
+                    onOpenCustomer = {
+                        selectedCustomer = it
+                        screen = "detail"
+                    },
+                    onOpenFollowUps = { screen = "followups" }
                 )
+            }
 
-                Spacer(Modifier.height(12.dp))
-                Text("DO NOW", style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(6.dp))
-
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(
-                        vm.customers.filter {
-                            it.name.contains(query, ignoreCase = true) ||
-                            it.status.contains(query, ignoreCase = true) ||
-                            it.inquiry.contains(query, ignoreCase = true)
-                        }
-                    ) { item ->
-                        CustomerCard(item)
-                    }
+            "detail" -> {
+                val customer = selectedCustomer
+                if (customer == null) {
+                    screen = "customers"
+                } else {
+                    CustomerDetailScreen(
+                        customer = customer,
+                        onBack = { screen = "customers" },
+                        onOpenFollowUps = { screen = "followups" }
+                    )
                 }
+            }
+
+            "followups" -> {
+                FollowUpScreen(
+                    followUps = SampleData.followUps,
+                    onBack = {
+                        screen = if (selectedCustomer == null) "dashboard" else "detail"
+                    },
+                    onOpenCustomer = { name ->
+                        vm.customers.firstOrNull { it.name == name }?.let {
+                            selectedCustomer = it
+                            screen = "detail"
+                        }
+                    }
+                )
+            }
+
+            else -> {
+                DashboardScreen(
+                    customers = vm.customers,
+                    onCustomers = { screen = "customers" },
+                    onFollowUps = {
+                        selectedCustomer = null
+                        screen = "followups"
+                    },
+                    onAddCustomer = { showAdd = true },
+                    onOpenCustomer = {
+                        selectedCustomer = it
+                        screen = "detail"
+                    }
+                )
             }
         }
 
@@ -142,35 +141,126 @@ private fun CreditCardCrmApp(vm: CrmViewModel = viewModel()) {
 }
 
 @Composable
-private fun StatCard(label: String, value: String) {
-    Card(Modifier.weight(1f)) {
-        Column(Modifier.padding(12.dp)) {
-            Text(value, style = MaterialTheme.typography.headlineSmall)
-            Text(label)
+private fun DashboardScreen(
+    customers: List<CustomerRecord>,
+    onCustomers: () -> Unit,
+    onFollowUps: () -> Unit,
+    onAddCustomer: () -> Unit,
+    onOpenCustomer: (CustomerRecord) -> Unit
+) {
+    Scaffold(
+        topBar = { TopAppBar(title = { Text("Credit Card CRM") }) },
+        floatingActionButton = {
+            FloatingActionButton(onClick = onAddCustomer) { Text("+") }
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)
+        ) {
+            Text("Today's Work", style = MaterialTheme.typography.headlineSmall)
+            Spacer(Modifier.height(8.dp))
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                StatCard("Overdue", "2")
+                StatCard("Follow-ups", "5")
+                StatCard("Pending", "3")
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = onCustomers) { Text("Customers") }
+                OutlinedButton(onClick = onFollowUps) { Text("Follow-ups") }
+            }
+
+            Spacer(Modifier.height(12.dp))
+            Text("DO NOW", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(6.dp))
+
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                items(customers.take(5)) { item ->
+                    CustomerCard(item, onOpenCustomer)
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun CustomerCard(item: Customer) {
+private fun CustomerListScreen(
+    customers: List<CustomerRecord>,
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onBack: () -> Unit,
+    onOpenCustomer: (CustomerRecord) -> Unit,
+    onOpenFollowUps: () -> Unit
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Customers") },
+                navigationIcon = { TextButton(onClick = onBack) { Text("Back") } }
+            )
+        }
+    ) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = onBack) { Text("Dashboard") }
+                OutlinedButton(onClick = onOpenFollowUps) { Text("Follow-ups") }
+            }
+            Spacer(Modifier.height(10.dp))
+            OutlinedTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Search name, status or inquiry") }
+            )
+            Spacer(Modifier.height(10.dp))
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                items(
+                    customers.filter {
+                        it.name.contains(query, true) ||
+                            it.status.contains(query, true) ||
+                            it.inquiryType.contains(query, true)
+                    }
+                ) { item ->
+                    CustomerCard(item, onOpenCustomer)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CustomerCard(
+    item: CustomerRecord,
+    onOpenCustomer: (CustomerRecord) -> Unit
+) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp)) {
             Text(item.name, style = MaterialTheme.typography.titleMedium)
-            Text(item.inquiry)
-            Spacer(Modifier.height(4.dp))
+            Text(item.inquiryType)
             Text(item.priority + ": " + item.status)
             Text("Next: " + item.nextAction)
-
-            if (item.note.isNotBlank()) {
-                Text("Note: " + item.note)
+            if (item.pendingReason.isNotBlank()) {
+                Text("Pending: " + item.pendingReason)
             }
 
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = {}) { Text("Call") }
-                OutlinedButton(onClick = {}) { Text("Follow-up") }
-                OutlinedButton(onClick = {}) { Text("View") }
+                OutlinedButton(onClick = { onOpenCustomer(item) }) { Text("View") }
             }
+        }
+    }
+}
+
+@Composable
+private fun StatCard(label: String, value: String) {
+    Card(Modifier.weight(1f)) {
+        Column(Modifier.padding(12.dp)) {
+            Text(value, style = MaterialTheme.typography.headlineSmall)
+            Text(label)
         }
     }
 }
