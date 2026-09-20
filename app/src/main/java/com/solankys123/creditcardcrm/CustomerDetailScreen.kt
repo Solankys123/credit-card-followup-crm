@@ -17,6 +17,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TextButton
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -109,9 +111,15 @@ fun CustomerDetailScreen(
     onBack: () -> Unit,
     onEdit: (CustomerRecord) -> Unit,
     onDelete: () -> Unit,
-    onOpenFollowUps: () -> Unit
+    onOpenFollowUps: () -> Unit,
+    activities: List<ActivityEvent> = emptyList(),
+    onLogActivity: (ActivityEvent) -> Unit = {}
 ) {
     val detail = CustomerDetailFixtures.forCustomer(customer)
+
+    fun logActivity(type: String, detailText: String) {
+        onLogActivity(ActivityEvent(0, customer.id, customer.name, type, detailText, java.time.LocalDateTime.now().toString()))
+    }
 
     Scaffold(
         topBar = {
@@ -144,6 +152,11 @@ fun CustomerDetailScreen(
                 Text("Next Action", style = MaterialTheme.typography.titleMedium)
                 Text(detail.base.nextAction)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = {
+                        logActivity("CALL", "Call initiated")
+                        val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + customer.phone))
+                        // The screen remains safe if no dialer is available.
+                    }) { Text("Call") }
                     OutlinedButton(onClick = { onEdit(customer) }) { Text("Edit") }
                     OutlinedButton(onClick = onDelete) { Text("Delete") }
                     OutlinedButton(onClick = onOpenFollowUps) { Text("Follow-up") }
@@ -193,7 +206,7 @@ fun CustomerDetailScreen(
                 Text("Activity Timeline", style = MaterialTheme.typography.titleMedium)
             }
 
-            items(detail.timeline) { event ->
+            items(activities) { event ->
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp)) {
                         Text(event.date, style = MaterialTheme.typography.labelMedium)
