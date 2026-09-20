@@ -14,6 +14,15 @@ data class CustomerRecord(
     val note: String = ""
 )
 
+data class ActivityEvent(
+    val id: Long = 0,
+    val customerId: Long,
+    val customerName: String,
+    val type: String,
+    val detail: String,
+    val createdAt: String
+)
+
 data class FollowUp(
     val id: Long = 0,
     val customerName: String,
