@@ -3,41 +3,16 @@ package com.solankys123.creditcardcrm
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-
-private class LegacyCrmViewModel : ViewModel()
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,7 +22,12 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun CreditCardCrmApp(vm: CrmViewModel = viewModel(factory = CrmViewModelFactory(LocalContext.current))) {
+private fun CreditCardCrmApp(
+    vm: CrmViewModel = viewModel(factory = CrmViewModelFactory(LocalContext.current))
+) {
+    val customers by vm.customers.collectAsStateWithLifecycle()
+    val followUps by vm.followUps.collectAsStateWithLifecycle()
+
     var screen by remember { mutableStateOf("dashboard") }
     var selectedCustomer by remember { mutableStateOf<CustomerRecord?>(null) }
     var showAdd by remember { mutableStateOf(false) }
@@ -55,63 +35,40 @@ private fun CreditCardCrmApp(vm: CrmViewModel = viewModel(factory = CrmViewModel
 
     MaterialTheme {
         when (screen) {
-            "customers" -> {
-                CustomerListScreen(
-                    customers = vm.customers,
-                    query = query,
-                    onQueryChange = { query = it },
-                    onBack = { screen = "dashboard" },
-                    onOpenCustomer = {
-                        selectedCustomer = it
-                        screen = "detail"
-                    },
+            "customers" -> CustomerListScreen(
+                customers = customers,
+                query = query,
+                onQueryChange = { query = it },
+                onBack = { screen = "dashboard" },
+                onOpenCustomer = { selectedCustomer = it; screen = "detail" },
+                onOpenFollowUps = { screen = "followups" }
+            )
+            "detail" -> {
+                val customer = selectedCustomer
+                if (customer == null) screen = "customers"
+                else CustomerDetailScreen(
+                    customer = customer,
+                    onBack = { screen = "customers" },
                     onOpenFollowUps = { screen = "followups" }
                 )
             }
-
-            "detail" -> {
-                val customer = selectedCustomer
-                if (customer == null) {
-                    screen = "customers"
-                } else {
-                    CustomerDetailScreen(
-                        customer = customer,
-                        onBack = { screen = "customers" },
-                        onOpenFollowUps = { screen = "followups" }
-                    )
-                }
-            }
-
-            "followups" -> {
-                FollowUpScreen(
-                    followUps = SampleData.followUps,
-                    onBack = {
-                        screen = if (selectedCustomer == null) "dashboard" else "detail"
-                    },
-                    onOpenCustomer = { name ->
-                        vm.customers.firstOrNull { it.name == name }?.let {
-                            selectedCustomer = it
-                            screen = "detail"
-                        }
-                    }
-                )
-            }
-
-            else -> {
-                DashboardScreen(
-                    customers = vm.customers,
-                    onCustomers = { screen = "customers" },
-                    onFollowUps = {
-                        selectedCustomer = null
-                        screen = "followups"
-                    },
-                    onAddCustomer = { showAdd = true },
-                    onOpenCustomer = {
+            "followups" -> FollowUpScreen(
+                followUps = followUps,
+                onBack = { screen = if (selectedCustomer == null) "dashboard" else "detail" },
+                onOpenCustomer = { name ->
+                    customers.firstOrNull { it.name == name }?.let {
                         selectedCustomer = it
                         screen = "detail"
                     }
-                )
-            }
+                }
+            )
+            else -> DashboardScreen(
+                customers = customers,
+                onCustomers = { screen = "customers" },
+                onFollowUps = { selectedCustomer = null; screen = "followups" },
+                onAddCustomer = { showAdd = true },
+                onOpenCustomer = { selectedCustomer = it; screen = "detail" }
+            )
         }
 
         if (showAdd) {
@@ -140,33 +97,24 @@ private fun DashboardScreen(
             FloatingActionButton(onClick = onAddCustomer) { Text("+") }
         }
     ) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)
-        ) {
+        Column(Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
             Text("Today's Work", style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(8.dp))
-
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatCard("Overdue", "2")
-                StatCard("Follow-ups", "5")
-                StatCard("Pending", "3")
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                StatCard("Customers", customers.size.toString())
+                StatCard("High Priority", customers.count { it.priority.equals("HIGH", true) }.toString())
+                StatCard("Pending", customers.count { it.status.contains("Pending", true) }.toString())
             }
-
             Spacer(Modifier.height(12.dp))
-
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = onCustomers) { Text("Customers") }
                 OutlinedButton(onClick = onFollowUps) { Text("Follow-ups") }
             }
-
             Spacer(Modifier.height(12.dp))
             Text("DO NOW", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(6.dp))
-
             LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(customers.take(5)) { item ->
-                    CustomerCard(item, onOpenCustomer)
-                }
+                items(customers.take(5)) { item -> CustomerCard(item, onOpenCustomer) }
             }
         }
     }
@@ -203,35 +151,25 @@ private fun CustomerListScreen(
             )
             Spacer(Modifier.height(10.dp))
             LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(
-                    customers.filter {
-                        it.name.contains(query, true) ||
-                            it.status.contains(query, true) ||
-                            it.inquiryType.contains(query, true)
-                    }
-                ) { item ->
-                    CustomerCard(item, onOpenCustomer)
-                }
+                items(customers.filter {
+                    it.name.contains(query, true) ||
+                    it.status.contains(query, true) ||
+                    it.inquiryType.contains(query, true)
+                }) { item -> CustomerCard(item, onOpenCustomer) }
             }
         }
     }
 }
 
 @Composable
-private fun CustomerCard(
-    item: CustomerRecord,
-    onOpenCustomer: (CustomerRecord) -> Unit
-) {
+private fun CustomerCard(item: CustomerRecord, onOpenCustomer: (CustomerRecord) -> Unit) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp)) {
             Text(item.name, style = MaterialTheme.typography.titleMedium)
             Text(item.inquiryType)
             Text(item.priority + ": " + item.status)
             Text("Next: " + item.nextAction)
-            if (item.pendingReason.isNotBlank()) {
-                Text("Pending: " + item.pendingReason)
-            }
-
+            if (item.pendingReason.isNotBlank()) Text("Pending: " + item.pendingReason)
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = {}) { Text("Call") }
@@ -252,10 +190,7 @@ private fun StatCard(label: String, value: String) {
 }
 
 @Composable
-private fun AddCustomerDialog(
-    onDismiss: () -> Unit,
-    onSave: (String, String) -> Unit
-) {
+private fun AddCustomerDialog(onDismiss: () -> Unit, onSave: (String, String) -> Unit) {
     var name by remember { mutableStateOf("") }
     var inquiry by remember { mutableStateOf("Short Inquiry") }
 
@@ -283,11 +218,7 @@ private fun AddCustomerDialog(
                 }
             }
         },
-        confirmButton = {
-            Button(onClick = { onSave(name, inquiry) }) { Text("Save") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        }
+        confirmButton = { Button(onClick = { onSave(name, inquiry) }) { Text("Save") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }
