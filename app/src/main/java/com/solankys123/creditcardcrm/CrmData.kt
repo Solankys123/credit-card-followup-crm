@@ -15,6 +15,7 @@ data class CustomerRecord(
 )
 
 data class FollowUp(
+    val id: Long = 0,
     val customerName: String,
     val reason: String,
     val dueAt: String,
