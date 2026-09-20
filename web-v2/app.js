@@ -97,36 +97,25 @@ function rescheduleFollowup(id){
 }
 function openC(n){sel=C.find(x=>x.n===n);page="detail";render()}function render(){loadCustomers();if(page==="dash")dash();else if(page==="cust")cust();else if(page==="add"){window.CrmAddCustomer.open()}else if(page==="detail"&&sel)detail();else follow()}render();
 function editCustomer(name){
- const c=C.find(function(x){return x.n===name});
- if(!c)return;
+ const c=C.find(function(x){return x.n===name}); if(!c)return;
  const esc=function(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")};
- shell('<div class="section"><div class="card pad"><div class="head"><div><h2>Edit Customer</h2><span class="muted">'+esc(c.n)+'</span></div><button class="alt" onclick="page=\'cust\';render()">Cancel</button></div><form id="editCustomerForm"><div class="form-grid"><label>Full name<input id="ec_name" value="'+esc(c.n)+'" required></label><label>Phone<input id="ec_ph" value="'+esc(c.ph)+'" required></label><label>Email<input id="ec_email" value="'+esc(c.email)+'"></label><label>PAN<input id="ec_pan" value="'+esc(c.pan)+'"></label><label>Date of Birth<input id="ec_dob" type="date" value="'+esc(c.dob)+'"></label><label>Mother's name<input id="ec_mother" value="'+esc(c.mother)+'"></label><label>Current address<input id="ec_address" value="'+esc(c.address)+'"></label><label>Office name<input id="ec_office" value="'+esc(c.office)+'"></label><label>Office address<input id="ec_officeAddress" value="'+esc(c.officeAddress)+'"></label><label>Category / Card<input id="ec_cat" value="'+esc(c.cat)+'"></label><label>Inquiry type<select id="ec_i"><option>Short Inquiry</option><option>Long Inquiry</option></select></label><label>Source<select id="ec_src"><option>WhatsApp</option><option>Direct</option><option>Referral</option><option>Existing</option><option>Other</option></select></label><label>YONO available<select id="ec_y"><option>Yes</option><option>No</option></select></label><label>Application / reference no.<input id="ec_app" value="'+esc(c.app)+'"></label><label>Application status<select id="ec_s"><option>New Inquiry</option><option>Application Started</option><option>Documents Pending</option><option>Documents Submitted</option><option>Verification</option><option>Approved</option><option>On Hold</option><option>Rejected</option><option>Not Interested</option></select></label><label>Pending reason<input id="ec_pending" value="'+esc(c.pending)+'"></label><label>Priority<select id="ec_p"><option>LOW</option><option>MEDIUM</option><option>HIGH</option></select></label><label>Next action<input id="ec_a" value="'+esc(c.a)+'"></label><label>Issue<input id="ec_issue" value="'+esc(c.issue)+'"></label><label>Customer notes<input id="ec_note" value="'+esc(c.note)+'"></label></div><div class="actions"><button type="submit">Save Changes</button><button type="button" class="alt" onclick="page=\'cust\';render()">Cancel</button></div></form></div></div>','<button class="alt" onclick="page=\'cust\';render()">← Customers</button>');
+ shell('<div class="section"><div class="card pad"><div class="head"><div><h2>Edit Customer</h2><span class="muted">'+esc(c.n)+'</span></div><button class="alt" onclick="page=\\'cust\\';render()">Cancel</button></div><form id="editCustomerForm" novalidate><div class="form-grid"><label>Full name<input id="ec_name" value="'+esc(c.n)+'" required></label><label>Phone<input id="ec_ph" value="'+esc(c.ph)+'" required></label><label>Email<input id="ec_email" value="'+esc(c.email)+'"></label><label>PAN<input id="ec_pan" value="'+esc(c.pan)+'"></label><label>Date of Birth<input id="ec_dob" type="date" value="'+esc(c.dob)+'"></label><label>Mother's name<input id="ec_mother" value="'+esc(c.mother)+'"></label><label>Current address<input id="ec_address" value="'+esc(c.address)+'"></label><label>Office name<input id="ec_office" value="'+esc(c.office)+'"></label><label>Office address<input id="ec_officeAddress" value="'+esc(c.officeAddress)+'"></label><label>Category / Card<input id="ec_cat" value="'+esc(c.cat)+'"></label><label>Inquiry type<select id="ec_i"><option>Short Inquiry</option><option>Long Inquiry</option></select></label><label>Source<select id="ec_src"><option>WhatsApp</option><option>Direct</option><option>Referral</option><option>Existing</option><option>Other</option></select></label><label>YONO available<select id="ec_y"><option>Yes</option><option>No</option></select></label><label>Application / reference no.<input id="ec_app" value="'+esc(c.app)+'"></label><label>Application status<select id="ec_s"><option>New Inquiry</option><option>Application Started</option><option>Documents Pending</option><option>Documents Submitted</option><option>Verification</option><option>Approved</option><option>On Hold</option><option>Rejected</option><option>Not Interested</option></select></label><label>Pending reason<input id="ec_pending" value="'+esc(c.pending)+'"></label><label>Priority<select id="ec_p"><option>LOW</option><option>MEDIUM</option><option>HIGH</option></select></label><label>Next action<input id="ec_a" value="'+esc(c.a)+'"></label><label>Issue<input id="ec_issue" value="'+esc(c.issue)+'"></label><label>Customer notes<input id="ec_note" value="'+esc(c.note)+'"></label></div><div class="actions"><button type="submit">Save Changes</button><button type="button" class="alt" onclick="page=\\'cust\\';render()">Cancel</button></div></form></div></div>','<button class="alt" onclick="page=\\'cust\\';render()">← Customers</button>');
  const set=function(id,value){const e=document.getElementById(id);if(e)e.value=value==null?"":value};
  set("ec_i",c.i);set("ec_src",c.src);set("ec_y",c.y);set("ec_s",c.s);set("ec_p",c.p);
+ const setError=function(e,msg){e.setCustomValidity(msg||"");e.classList.toggle("invalid",!!msg);let n=e.parentElement.querySelector(".field-error");if(!n){n=document.createElement("small");n.className="field-error";e.parentElement.appendChild(n)}n.textContent=msg||"";n.style.display=msg?"block":"none"};
+ const validators={
+  name:function(e){const v=e.value.trim();if(!v)return"Full name is required.";if(v.length<2)return"Name must be at least 2 characters.";if(v.length>80)return"Name is too long.";if(!/^[A-Za-z][A-Za-z .'-]*$/.test(v))return"Name can contain letters, spaces, dot, apostrophe and hyphen only.";return""},
+  ph:function(e){const v=e.value.trim();if(!/^\\d{10}$/.test(v))return"Phone number must be exactly 10 digits.";if(!/^[6-9]/.test(v))return"Enter a valid Indian mobile number starting with 6, 7, 8 or 9.";return""},
+  email:function(e){const v=e.value.trim();if(!v)return"";if(v.length>254||!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(v))return"Enter a valid email address.";return""},
+  pan:function(e){const v=e.value.trim().toUpperCase();e.value=v;if(!v)return"";if(!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(v))return"PAN must be 10 characters, e.g. ABCDE1234F.";return""},
+  mother:function(e){const v=e.value.trim();if(!v)return"";if(v.length>80||!/^[A-Za-z][A-Za-z .'-]*$/.test(v))return"Enter a valid name using letters, spaces, dot, apostrophe or hyphen only.";return""}
+ };
+ const runValidation=function(){let ok=true;Object.keys(validators).forEach(function(k){const e=document.getElementById("ec_"+k);if(e){const msg=validators[k](e);setError(e,msg);if(msg)ok=false}});return ok};
+ Object.keys(validators).forEach(function(k){const e=document.getElementById("ec_"+k);if(e){e.addEventListener("input",function(){setError(e,validators[k](e))});e.addEventListener("blur",function(){setError(e,validators[k](e))})}});
  document.getElementById("editCustomerForm").addEventListener("submit",function(ev){
-   ev.preventDefault();
-   const v=function(id){return document.getElementById(id).value.trim()};
-   const updated={n:v("ec_name"),ph:v("ec_ph"),email:v("ec_email"),pan:v("ec_pan"),dob:v("ec_dob"),mother:v("ec_mother"),address:v("ec_address"),office:v("ec_office"),officeAddress:v("ec_officeAddress"),cat:v("ec_cat"),i:v("ec_i"),src:v("ec_src"),y:v("ec_y"),app:v("ec_app"),s:v("ec_s"),pending:v("ec_pending"),p:v("ec_p"),a:v("ec_a"),issue:v("ec_issue"),note:v("ec_note"),days:c.days};
-   const index=C.findIndex(function(x){return x.n===name});
-   if(index<0)return;
-   C[index]=updated;
-   localStorage.setItem("crm_customers",JSON.stringify(C));
-   sel=updated;
-   alert("Customer updated successfully");
-   page="cust";
-   render();
+  ev.preventDefault(); if(!runValidation()){const bad=document.querySelector(".invalid");if(bad)bad.focus();return}
+  const v=function(id){return document.getElementById(id).value.trim()};
+  const updated=Object.assign({},c,{n:v("ec_name"),ph:v("ec_ph"),email:v("ec_email"),pan:v("ec_pan"),dob:v("ec_dob"),mother:v("ec_mother"),address:v("ec_address"),office:v("ec_office"),officeAddress:v("ec_officeAddress"),cat:v("ec_cat"),i:v("ec_i"),src:v("ec_src"),y:v("ec_y"),app:v("ec_app"),s:v("ec_s"),pending:v("ec_pending"),p:v("ec_p"),a:v("ec_a"),issue:v("ec_issue"),note:v("ec_note")});
+  const index=C.findIndex(function(x){return x.n===name}); if(index<0)return; C[index]=updated; localStorage.setItem("crm_customers",JSON.stringify(C)); sel=updated; alert("Customer updated successfully"); page="cust"; render();
  });
-}
-function deleteCustomer(name){
- const c=C.find(function(x){return x.n===name});
- if(!c)return;
- if(!window.confirm("Delete customer \""+name+"\"? This will remove the customer from this browser."))return;
- C=C.filter(function(x){return x.n!==name});
- localStorage.setItem("crm_customers",JSON.stringify(C));
- const followups=getFollowups().filter(function(x){return x.customer!==name});
- saveFollowups(followups);
- if(sel&&sel.n===name)sel=null;
- alert("Customer deleted successfully");
- page="cust";
- render();
 }
