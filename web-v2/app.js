@@ -67,6 +67,61 @@ const SEED_FOLLOWUPS=[
 ];
 function getFollowups(){try{const raw=localStorage.getItem("crm_followups");if(raw===null){localStorage.setItem("crm_followups",JSON.stringify(SEED_FOLLOWUPS));return SEED_FOLLOWUPS.slice()}const parsed=JSON.parse(raw);return Array.isArray(parsed)?parsed:[]}catch(e){return[]}}
 function saveFollowups(list){localStorage.setItem("crm_followups",JSON.stringify(list))}
+function notificationKey(x){return "crm_notified_"+x.id+"_"+x.due}
+function notificationsEnabled(){return localStorage.getItem("crm_notifications_enabled")==="1"}
+function setNotificationsEnabled(v){localStorage.setItem("crm_notifications_enabled",v?"1":"0")}
+function requestNotificationPermission(){
+ if(!("Notification" in window)){alert("This browser does not support notifications.");return Promise.resolve("unsupported")}
+ return Notification.requestPermission().then(function(p){if(p==="granted")setNotificationsEnabled(true);return p})
+}
+function showFollowupNotification(x){
+ if(!notificationsEnabled()||!("Notification" in window)||Notification.permission!=="granted")return;
+ const key=notificationKey(x);
+ if(localStorage.getItem(key)==="1")return;
+ localStorage.setItem(key,"1");
+ const title=x.priority==="HIGH"?"🔴 Follow-up due":"🔔 Follow-up reminder";
+ const body=x.customer+" • "+x.reason;
+ try{new Notification(title,{body:body,tag:"followup-"+x.id})}catch(e){}
+}
+function checkFollowupNotifications(){
+ if(!notificationsEnabled()||!("Notification" in window)||Notification.permission!=="granted")return;
+ const now=Date.now();
+ getFollowups().filter(function(x){return x.status==="OPEN"&&new Date(x.due).getTime()<=now}).forEach(showFollowupNotification);
+}
+function scheduleFollowupNotifications(){
+ if(!notificationsEnabled()||!("Notification" in window)||Notification.permission!=="granted")return;
+ getFollowups().filter(function(x){return x.status==="OPEN"}).forEach(function(x){
+  const delay=new Date(x.due).getTime()-Date.now();
+  if(delay>0&&delay<2147483647){
+   const key=notificationKey(x);
+   if(localStorage.getItem(key)!=="1")window.setTimeout(function(){checkFollowupNotifications()},delay+500);
+  }
+ });
+ checkFollowupNotifications();
+}
+function notificationsPage(){
+ const supported="Notification" in window;
+ const permission=supported?Notification.permission:"unsupported";
+ const enabled=notificationsEnabled()&&permission==="granted";
+ const list=getFollowups().filter(function(x){return x.status==="OPEN"}).sort(function(a,b){return new Date(a.due)-new Date(b.due)});
+ shell('<div class="section"><div class="card pad"><div class="head"><div><h2>🔔 Notifications</h2><span class="muted">Get an alert when a follow-up is due.</span></div><span class="badge '+(enabled?"green":"low")+'">'+(enabled?"ON":"OFF")+'</span></div><div class="card pad"><b>Notification status</b><p class="muted">'+(permission==="granted"?"Permission granted. Alerts can be sent while this page is open.":permission==="denied"?"Permission blocked. Allow notifications in your browser site settings.":supported?"Permission not granted yet.":"This browser does not support notifications.")+'</p><div class="actions">'+(permission!=="granted"?'<button onclick="enableNotifications()">Enable Notifications</button>':'<button onclick="testNotification()">Send Test Notification</button><button class="alt" onclick="disableNotifications()">Turn Off</button>')+'</div></div><div class="card pad"><h3>Upcoming follow-ups</h3><div class="list">'+(list.length?list.slice(0,10).map(function(x){return '<div class="card customer"><div><div class="name">'+x.customer+'</div><div class="muted">'+x.reason+'</div><div class="small">Due: '+x.due+' • '+x.priority+'</div></div></div>'}).join(""):'<div class="muted">No open follow-ups.</div>')+'</div></div><div class="muted small">Keep the CRM page open for scheduled browser alerts. Native Android notifications will use the Android notification system in the app version.</div></div>','<button class="alt" onclick="page=&quot;dash&quot;;render()">Dashboard</button><button class="alt" onclick="page=&quot;follow&quot;;render()">Follow-ups</button>');
+}
+function enableNotifications(){
+ requestNotificationPermission().then(function(p){
+  if(p==="granted"){setNotificationsEnabled(true);scheduleFollowupNotifications();alert("Notifications enabled.");render()}
+  else if(p==="denied")alert("Notifications are blocked. Please allow them in browser site settings and try again.");
+  else if(p==="unsupported")alert("This browser does not support notifications.");
+ });
+}
+function disableNotifications(){setNotificationsEnabled(false);alert("Notifications turned off.");render()}
+function testNotification(){
+ if(!notificationsEnabled()||Notification.permission!=="granted"){enableNotifications();return}
+ new Notification("🔔 CRM Test Notification",{body:"Follow-up notifications are working."});
+}
+if(window.__crmNotificationTimer)clearInterval(window.__crmNotificationTimer);
+window.__crmNotificationTimer=setInterval(checkFollowupNotifications,30000);
+scheduleFollowupNotifications();
+
 function follow(){
  const list=getFollowups();
  const now=new Date("2026-09-20T12:00:00");
@@ -95,7 +150,7 @@ function rescheduleFollowup(id){
  const time=prompt("New time (HH:MM)",x.due.slice(11,16));if(!time)return;
  x.due=date+"T"+time;x.status="OPEN";x.rescheduledAt=new Date().toISOString();saveFollowups(list);render();
 }
-function openC(n){sel=C.find(x=>x.n===n);page="detail";render()}function render(){loadCustomers();if(page==="dash")dash();else if(page==="cust")cust();else if(page==="add"){window.CrmAddCustomer.open()}else if(page==="detail"&&sel)detail();else follow()}render();
+function openC(n){sel=C.find(x=>x.n===n);page="detail";render()}function render(){loadCustomers();if(page==="dash")dash();else if(page==="cust")cust();else if(page==="add"){window.CrmAddCustomer.open()}else if(page==="detail"&&sel)detail();else if(page==="notify")notificationsPage();else follow()}render();
 function deleteCustomer(name){
  const customer=C.find(function(x){return x.n===name});
  if(!customer)return;
