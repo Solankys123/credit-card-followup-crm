@@ -20,6 +20,16 @@ data class CustomerEntity(
     val note: String = ""
 )
 
+@Entity(tableName = "activity_events")
+data class ActivityEventEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val customerId: Long,
+    val customerName: String,
+    val type: String,
+    val detail: String,
+    val createdAt: String
+)
+
 @Entity(tableName = "follow_ups")
 data class FollowUpEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -48,6 +58,15 @@ interface CustomerDao {
 }
 
 @androidx.room.Dao
+interface ActivityEventDao {
+    @androidx.room.Query("SELECT * FROM activity_events WHERE customerId = :customerId ORDER BY id DESC")
+    suspend fun getForCustomer(customerId: Long): List<ActivityEventEntity>
+
+    @androidx.room.Insert
+    suspend fun insert(event: ActivityEventEntity)
+}
+
+@androidx.room.Dao
 interface FollowUpDao {
     @androidx.room.Query("SELECT * FROM follow_ups ORDER BY dueAt ASC")
     suspend fun getAll(): List<FollowUpEntity>
@@ -62,10 +81,11 @@ interface FollowUpDao {
     suspend fun delete(followUp: FollowUpEntity)
 }
 
-@Database(entities = [CustomerEntity::class, FollowUpEntity::class], version = 1, exportSchema = false)
+@Database(entities = [CustomerEntity::class, FollowUpEntity::class, ActivityEventEntity::class], version = 2, exportSchema = false)
 abstract class CrmDatabase : RoomDatabase() {
     abstract fun customerDao(): CustomerDao
     abstract fun followUpDao(): FollowUpDao
+    abstract fun activityEventDao(): ActivityEventDao
 
     companion object {
         @Volatile private var INSTANCE: CrmDatabase? = null
@@ -76,7 +96,8 @@ abstract class CrmDatabase : RoomDatabase() {
                     context.applicationContext,
                     CrmDatabase::class.java,
                     "credit_card_crm.db"
-                ).build().also { INSTANCE = it }
+                ).fallbackToDestructiveMigration()
+                .build().also { INSTANCE = it }
             }
     }
 }
