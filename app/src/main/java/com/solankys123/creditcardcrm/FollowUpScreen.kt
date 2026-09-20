@@ -15,61 +15,59 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
 fun FollowUpScreen(
-    followUps: List<FollowUp> = SampleData.followUps
+    followUps: List<FollowUp> = SampleData.followUps,
+    onBack: () -> Unit = {},
+    onOpenCustomer: (String) -> Unit = {}
 ) {
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp)
     ) {
-        Text("Follow-ups", style = MaterialTheme.typography.headlineSmall)
-        Spacer(Modifier.height(12.dp))
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(
-                selected = true,
-                onClick = {},
-                label = { Text("Today") }
-            )
-            FilterChip(
-                selected = false,
-                onClick = {},
-                label = { Text("Overdue") }
-            )
-            FilterChip(
-                selected = false,
-                onClick = {},
-                label = { Text("Upcoming") }
-            )
-        }
-
-        Spacer(Modifier.height(12.dp))
-
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            items(followUps) { followUp ->
-                FollowUpCard(followUp)
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Follow-ups") },
+                    navigationIcon = {
+                        TextButton(onClick = onBack) { Text("Back") }
+                    }
+                )
             }
-        }
-    }
-}
+        ) { padding ->
+            Column(Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(selected = true, onClick = {}, label = { Text("Today") })
+                    FilterChip(selected = false, onClick = {}, label = { Text("Overdue") })
+                    FilterChip(selected = false, onClick = {}, label = { Text("Upcoming") })
+                }
 
-@Composable
-private fun FollowUpCard(item: FollowUp) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(14.dp)) {
-            Text(item.customerName, style = MaterialTheme.typography.titleMedium)
-            Text(item.reason)
-            Text("Due: " + item.dueAt)
-            Text("Priority: " + item.priority)
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = {}) { Text("Call") }
-                OutlinedButton(onClick = {}) { Text("Done") }
-                OutlinedButton(onClick = {}) { Text("Reschedule") }
+                Spacer(Modifier.height(12.dp))
+
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    items(followUps) { followUp ->
+                        Card(Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(14.dp)) {
+                                Text(followUp.customerName, style = MaterialTheme.typography.titleMedium)
+                                Text(followUp.reason)
+                                Text("Due: " + followUp.dueAt)
+                                Text("Priority: " + followUp.priority)
+                                Spacer(Modifier.height(8.dp))
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    OutlinedButton(onClick = { onOpenCustomer(followUp.customerName) }) { Text("Customer") }
+                                    OutlinedButton(onClick = {}) { Text("Call") }
+                                    OutlinedButton(onClick = {}) { Text("Done") }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
