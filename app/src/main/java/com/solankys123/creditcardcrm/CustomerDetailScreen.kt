@@ -114,7 +114,11 @@ fun CustomerDetailScreen(
     onDelete: () -> Unit,
     onOpenFollowUps: () -> Unit,
     activities: List<ActivityEvent> = emptyList(),
-    onLogActivity: (ActivityEvent) -> Unit = {}
+    documents: List<DocumentItem> = emptyList(),
+    issues: List<IssueItem> = emptyList(),
+    onLogActivity: (ActivityEvent) -> Unit = {},
+    onAddDocument: (DocumentItem) -> Unit = {},
+    onAddIssue: (IssueItem) -> Unit = {}
 ) {
     val detail = CustomerDetailFixtures.forCustomer(customer)
     val context = LocalContext.current
@@ -173,35 +177,40 @@ fun CustomerDetailScreen(
 
             item {
                 Text("Documents", style = MaterialTheme.typography.titleMedium)
-            }
-
-            items(detail.documents) { document ->
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(12.dp)) {
-                        Text((if (document.received) "✓ " else "○ ") + document.name)
-                        if (document.issue.isNotBlank()) {
-                            Text("Issue: " + document.issue)
+                Spacer(Modifier.height(6.dp))
+                if (documents.isEmpty()) Text("No documents tracked yet")
+                else documents.forEach { document ->
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(12.dp)) {
+                            Text(document.type, style = MaterialTheme.typography.titleMedium)
+                            Text("Status: " + document.status)
+                            if (document.note.isNotBlank()) Text(document.note)
                         }
                     }
                 }
+                Spacer(Modifier.height(6.dp))
+                OutlinedButton(onClick = {
+                    onAddDocument(DocumentItem(customerId=customer.id, type="Document", status="PENDING"))
+                }) { Text("Add document") }
             }
 
             item {
                 Text("Issues", style = MaterialTheme.typography.titleMedium)
-            }
-
-            if (detail.issues.isEmpty()) {
-                item { Text("No open issues") }
-            } else {
-                items(detail.issues) { issue ->
+                Spacer(Modifier.height(6.dp))
+                if (issues.isEmpty()) Text("No issues tracked")
+                else issues.forEach { issue ->
                     Card(Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(12.dp)) {
                             Text(issue.title, style = MaterialTheme.typography.titleMedium)
                             Text("Status: " + issue.status)
-                            Text(issue.detail)
+                            if (issue.note.isNotBlank()) Text(issue.note)
                         }
                     }
                 }
+                Spacer(Modifier.height(6.dp))
+                OutlinedButton(onClick = {
+                    onAddIssue(IssueItem(customerId=customer.id, title="New issue", status="OPEN"))
+                }) { Text("Add issue") }
             }
 
             item {
@@ -211,8 +220,8 @@ fun CustomerDetailScreen(
             items(activities) { event ->
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp)) {
-                        Text(event.date, style = MaterialTheme.typography.labelMedium)
-                        Text(event.title, style = MaterialTheme.typography.titleMedium)
+                        Text(event.createdAt, style = MaterialTheme.typography.labelMedium)
+                        Text(event.type, style = MaterialTheme.typography.titleMedium)
                         Text(event.detail)
                     }
                 }
