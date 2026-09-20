@@ -43,6 +43,14 @@ class CrmViewModel(private val repository: CrmRepository) : ViewModel() {
     }
 
 
+    fun activities(customerId: Long) = kotlinx.coroutines.flow.flow {
+        emit(repository.activities(customerId))
+    }
+
+    fun logActivity(event: ActivityEvent) = viewModelScope.launch {
+        repository.addActivity(event)
+    }
+
     fun addFollowUp(followUp: FollowUp) = viewModelScope.launch {
         if (followUp.customerName.isBlank() || followUp.reason.isBlank() || followUp.dueAt.isBlank()) return@launch
         repository.addFollowUp(followUp)
