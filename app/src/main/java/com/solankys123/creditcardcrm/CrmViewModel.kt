@@ -12,6 +12,8 @@ class CrmViewModel(private val repository: CrmRepository) : ViewModel() {
     val customers: StateFlow<List<CustomerRecord>> = _customers.asStateFlow()
 
     private val _followUps = MutableStateFlow<List<FollowUp>>(emptyList())
+    private val _activities = MutableStateFlow<List<ActivityEvent>>(emptyList())
+    val activities: StateFlow<List<ActivityEvent>> = _activities.asStateFlow()
     val followUps: StateFlow<List<FollowUp>> = _followUps.asStateFlow()
 
     init { refresh() }
@@ -43,12 +45,13 @@ class CrmViewModel(private val repository: CrmRepository) : ViewModel() {
     }
 
 
-    fun activities(customerId: Long) = kotlinx.coroutines.flow.flow {
-        emit(repository.activities(customerId))
+    fun loadActivities(customerId: Long) = viewModelScope.launch {
+        _activities.value = repository.activities(customerId)
     }
 
     fun logActivity(event: ActivityEvent) = viewModelScope.launch {
         repository.addActivity(event)
+        loadActivities(event.customerId)
     }
 
     fun addFollowUp(followUp: FollowUp) = viewModelScope.launch {
