@@ -40,12 +40,22 @@ class CrmRepository(private val db: CrmDatabase) {
     }
 
     suspend fun addFollowUp(followUp: FollowUp) {
+        val customer = followUp.customerName.trim()
+        val reason = followUp.reason.trim()
+        val dueAt = followUp.dueAt.trim()
+        val priority = followUp.priority.trim().uppercase().ifBlank { "MEDIUM" }
+        if (customer.isBlank() || reason.isBlank() || dueAt.isBlank()) return
+        if (priority !in setOf("HIGH", "MEDIUM", "LOW")) return
+        if (db.customerDao().getAll().none { it.name.equals(customer, ignoreCase = true) }) return
+        if (db.followUpDao().getPendingForCustomer(customer).any {
+            it.reason.equals(reason, ignoreCase = true) && it.dueAt.equals(dueAt, ignoreCase = true)
+        }) return
         db.followUpDao().insert(
             FollowUpEntity(
-                customerName = followUp.customerName.trim(),
-                reason = followUp.reason.trim(),
-                dueAt = followUp.dueAt.trim(),
-                priority = followUp.priority.trim().ifBlank { "MEDIUM" },
+                customerName = customer,
+                reason = reason,
+                dueAt = dueAt,
+                priority = priority,
                 completed = false
             )
         )
