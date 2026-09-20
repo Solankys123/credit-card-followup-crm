@@ -44,6 +44,49 @@ class CrmRepository(private val db: CrmDatabase) {
             ActivityEvent(it.id, it.customerId, it.customerName, it.type, it.detail, it.createdAt)
         }
 
+    suspend fun documents(customerId: Long): List<DocumentItem> =
+        db.documentDao().getForCustomer(customerId).map {
+            DocumentItem(it.id, it.customerId, it.type, it.status, it.note)
+        }
+
+    suspend fun addDocument(document: DocumentItem) {
+        if (document.customerId == 0L || document.type.isBlank()) return
+        db.documentDao().insert(
+            DocumentEntity(
+                customerId = document.customerId,
+                type = document.type.trim(),
+                status = document.status.trim(),
+                note = document.note.trim()
+            )
+        )
+    }
+
+    suspend fun updateDocument(document: DocumentItem) {
+        db.documentDao().update(DocumentEntity(document.id, document.customerId, document.type, document.status, document.note))
+    }
+
+    suspend fun deleteDocument(document: DocumentItem) {
+        db.documentDao().delete(DocumentEntity(document.id, document.customerId, document.type, document.status, document.note))
+    }
+
+    suspend fun issues(customerId: Long): List<IssueItem> =
+        db.issueDao().getForCustomer(customerId).map {
+            IssueItem(it.id, it.customerId, it.title, it.status, it.note)
+        }
+
+    suspend fun addIssue(issue: IssueItem) {
+        if (issue.customerId == 0L || issue.title.isBlank()) return
+        db.issueDao().insert(IssueEntity(customerId = issue.customerId, title = issue.title.trim(), status = issue.status.trim(), note = issue.note.trim()))
+    }
+
+    suspend fun updateIssue(issue: IssueItem) {
+        db.issueDao().update(IssueEntity(issue.id, issue.customerId, issue.title, issue.status, issue.note))
+    }
+
+    suspend fun deleteIssue(issue: IssueItem) {
+        db.issueDao().delete(IssueEntity(issue.id, issue.customerId, issue.title, issue.status, issue.note))
+    }
+
     suspend fun addActivity(event: ActivityEvent) {
         if (event.customerId == 0L || event.detail.isBlank()) return
         db.activityEventDao().insert(
