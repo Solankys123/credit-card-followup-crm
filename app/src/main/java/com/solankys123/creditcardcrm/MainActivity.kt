@@ -33,6 +33,14 @@ private fun CreditCardCrmApp(
     var showAdd by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
 
+    // Keep detail screen synchronized with the DB after edits.
+    LaunchedEffect(customers, selectedCustomer?.id) {
+        selectedCustomer?.let { selected ->
+            selectedCustomer = customers.firstOrNull { it.id == selected.id }
+            if (selectedCustomer == null) screen = "customers"
+        }
+    }
+
     MaterialTheme {
         when (screen) {
             "customers" -> CustomerListScreen(
@@ -41,7 +49,8 @@ private fun CreditCardCrmApp(
                 onQueryChange = { query = it },
                 onBack = { screen = "dashboard" },
                 onOpenCustomer = { selectedCustomer = it; screen = "detail" },
-                onOpenFollowUps = { screen = "followups" }
+                onOpenFollowUps = { screen = "followups" },
+                onAddCustomer = { showAdd = true }
             )
             "detail" -> {
                 val customer = selectedCustomer
@@ -49,6 +58,12 @@ private fun CreditCardCrmApp(
                 else CustomerDetailScreen(
                     customer = customer,
                     onBack = { screen = "customers" },
+                    onEdit = { selectedCustomer = it; showAdd = true },
+                    onDelete = {
+                        vm.deleteCustomer(customer)
+                        selectedCustomer = null
+                        screen = "customers"
+                    },
                     onOpenFollowUps = { screen = "followups" }
                 )
             }
@@ -72,10 +87,11 @@ private fun CreditCardCrmApp(
         }
 
         if (showAdd) {
-            AddCustomerDialog(
+            CustomerEditorDialog(
+                initial = selectedCustomer,
                 onDismiss = { showAdd = false },
-                onSave = { name, inquiry ->
-                    vm.addCustomer(name, inquiry)
+                onSave = { customer ->
+                    if (customer.id == 0L) vm.addCustomer(customer) else vm.updateCustomer(customer)
                     showAdd = false
                 }
             )
@@ -93,9 +109,7 @@ private fun DashboardScreen(
 ) {
     Scaffold(
         topBar = { TopAppBar(title = { Text("Credit Card CRM") }) },
-        floatingActionButton = {
-            FloatingActionButton(onClick = onAddCustomer) { Text("+") }
-        }
+        floatingActionButton = { FloatingActionButton(onClick = onAddCustomer) { Text("+") } }
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
             Text("Today's Work", style = MaterialTheme.typography.headlineSmall)
@@ -127,13 +141,15 @@ private fun CustomerListScreen(
     onQueryChange: (String) -> Unit,
     onBack: () -> Unit,
     onOpenCustomer: (CustomerRecord) -> Unit,
-    onOpenFollowUps: () -> Unit
+    onOpenFollowUps: () -> Unit,
+    onAddCustomer: () -> Unit
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Customers") },
-                navigationIcon = { TextButton(onClick = onBack) { Text("Back") } }
+                navigationIcon = { TextButton(onClick = onBack) { Text("Back") } },
+                actions = { TextButton(onClick = onAddCustomer) { Text("+ Add") } }
             )
         }
     ) { padding ->
@@ -144,8 +160,7 @@ private fun CustomerListScreen(
             }
             Spacer(Modifier.height(10.dp))
             OutlinedTextField(
-                value = query,
-                onValueChange = onQueryChange,
+                value = query, onValueChange = onQueryChange,
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Search name, status or inquiry") }
             )
@@ -171,10 +186,7 @@ private fun CustomerCard(item: CustomerRecord, onOpenCustomer: (CustomerRecord) 
             Text("Next: " + item.nextAction)
             if (item.pendingReason.isNotBlank()) Text("Pending: " + item.pendingReason)
             Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = {}) { Text("Call") }
-                OutlinedButton(onClick = { onOpenCustomer(item) }) { Text("View") }
-            }
+            OutlinedButton(onClick = { onOpenCustomer(item) }) { Text("View") }
         }
     }
 }
@@ -190,35 +202,65 @@ private fun StatCard(label: String, value: String) {
 }
 
 @Composable
-private fun AddCustomerDialog(onDismiss: () -> Unit, onSave: (String, String) -> Unit) {
-    var name by remember { mutableStateOf("") }
-    var inquiry by remember { mutableStateOf("Short Inquiry") }
+private fun CustomerEditorDialog(
+    initial: CustomerRecord?,
+    onDismiss: () -> Unit,
+    onSave: (CustomerRecord) -> Unit
+) {
+    var name by remember(initial?.id) { mutableStateOf(initial?.name ?: "") }
+    var phone by remember(initial?.id) { mutableStateOf(initial?.phone ?: "") }
+    var inquiry by remember(initial?.id) { mutableStateOf(initial?.inquiryType ?: "Short Inquiry") }
+    var status by remember(initial?.id) { mutableStateOf(initial?.status ?: "New Inquiry") }
+    var priority by remember(initial?.id) { mutableStateOf(initial?.priority ?: "MEDIUM") }
+    var nextAction by remember(initial?.id) { mutableStateOf(initial?.nextAction ?: "Contact customer") }
+    var application by remember(initial?.id) { mutableStateOf(initial?.applicationNumber ?: "") }
+    var pending by remember(initial?.id) { mutableStateOf(initial?.pendingReason ?: "") }
+    var note by remember(initial?.id) { mutableStateOf(initial?.note ?: "") }
+    var error by remember(initial?.id) { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add Customer") },
+        title = { Text(if (initial == null) "Add Customer" else "Edit Customer") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Customer name") }
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
-                        selected = inquiry == "Short Inquiry",
-                        onClick = { inquiry = "Short Inquiry" },
-                        label = { Text("Short") }
-                    )
-                    FilterChip(
-                        selected = inquiry == "Long Inquiry",
-                        onClick = { inquiry = "Long Inquiry" },
-                        label = { Text("Long") }
-                    )
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                item { OutlinedTextField(name, { name = it }, label = { Text("Customer name *") }, singleLine = true) }
+                item { OutlinedTextField(phone, { phone = it }, label = { Text("Phone") }, singleLine = true) }
+                item {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        FilterChip(inquiry == "Short Inquiry", { inquiry = "Short Inquiry" }, label = { Text("Short") })
+                        FilterChip(inquiry == "Long Inquiry", { inquiry = "Long Inquiry" }, label = { Text("Long") })
+                    }
                 }
+                item { OutlinedTextField(status, { status = it }, label = { Text("Status") }, singleLine = true) }
+                item { OutlinedTextField(priority, { priority = it }, label = { Text("Priority") }, singleLine = true) }
+                item { OutlinedTextField(nextAction, { nextAction = it }, label = { Text("Next action") }, singleLine = true) }
+                item { OutlinedTextField(application, { application = it }, label = { Text("Application / Reference") }, singleLine = true) }
+                item { OutlinedTextField(pending, { pending = it }, label = { Text("Pending reason") }, singleLine = true) }
+                item { OutlinedTextField(note, { note = it }, label = { Text("Customer note") }, minLines = 2) }
+                if (error.isNotBlank()) item { Text(error, color = MaterialTheme.colorScheme.error) }
             }
         },
-        confirmButton = { Button(onClick = { onSave(name, inquiry) }) { Text("Save") } },
+        confirmButton = {
+            Button(onClick = {
+                if (name.isBlank()) {
+                    error = "Customer name is required"
+                } else {
+                    onSave(CustomerRecord(
+                        id = initial?.id ?: 0L,
+                        name = name.trim(),
+                        inquiryType = inquiry,
+                        status = status.trim().ifBlank { "New Inquiry" },
+                        priority = priority.trim().ifBlank { "MEDIUM" },
+                        nextAction = nextAction.trim().ifBlank { "Contact customer" },
+                        phone = phone.trim(),
+                        applicationNumber = application.trim(),
+                        pendingReason = pending.trim(),
+                        lastContact = initial?.lastContact ?: "",
+                        note = note.trim()
+                    ))
+                }
+            }) { Text("Save") }
+        },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }
