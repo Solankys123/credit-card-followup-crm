@@ -39,6 +39,24 @@ class CrmRepository(private val db: CrmDatabase) {
         }
     }
 
+    suspend fun activities(customerId: Long): List<ActivityEvent> =
+        db.activityEventDao().getForCustomer(customerId).map {
+            ActivityEvent(it.id, it.customerId, it.customerName, it.type, it.detail, it.createdAt)
+        }
+
+    suspend fun addActivity(event: ActivityEvent) {
+        if (event.customerId == 0L || event.detail.isBlank()) return
+        db.activityEventDao().insert(
+            ActivityEventEntity(
+                customerId = event.customerId,
+                customerName = event.customerName,
+                type = event.type,
+                detail = event.detail.trim(),
+                createdAt = event.createdAt
+            )
+        )
+    }
+
     suspend fun addFollowUp(followUp: FollowUp) {
         val customer = followUp.customerName.trim()
         val reason = followUp.reason.trim()
