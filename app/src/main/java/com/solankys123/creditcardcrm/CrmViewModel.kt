@@ -22,9 +22,21 @@ class CrmViewModel(private val repository: CrmRepository) : ViewModel() {
         _followUps.value = repository.followUps()
     }
 
-    fun addCustomer(name: String, inquiry: String) = viewModelScope.launch {
-        if (name.isBlank()) return@launch
-        repository.addCustomer(name, inquiry)
+    fun addCustomer(customer: CustomerRecord) = viewModelScope.launch {
+        if (customer.name.isBlank()) return@launch
+        repository.addCustomer(customer)
+        refresh()
+    }
+
+    fun updateCustomer(customer: CustomerRecord) = viewModelScope.launch {
+        if (customer.id == 0L || customer.name.isBlank()) return@launch
+        repository.updateCustomer(customer)
+        refresh()
+    }
+
+    fun deleteCustomer(customer: CustomerRecord) = viewModelScope.launch {
+        if (customer.id == 0L) return@launch
+        repository.deleteCustomer(customer)
         refresh()
     }
 }
