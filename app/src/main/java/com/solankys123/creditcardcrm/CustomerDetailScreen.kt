@@ -147,7 +147,6 @@ fun CustomerDetailScreen(
                     OutlinedButton(onClick = { onEdit(customer) }) { Text("Edit") }
                     OutlinedButton(onClick = onDelete) { Text("Delete") }
                     OutlinedButton(onClick = onOpenFollowUps) { Text("Follow-up") }
-                    OutlinedButton(onClick = { onEdit(customer) }) { Text("Edit") }
                 }
             }
 
