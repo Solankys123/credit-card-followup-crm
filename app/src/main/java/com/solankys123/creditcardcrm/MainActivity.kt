@@ -32,26 +32,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
-private class CrmViewModel : ViewModel() {
-    var customers by mutableStateOf(SampleData.customers)
-        private set
-
-    fun addCustomer(name: String, inquiry: String) {
-        if (name.isBlank()) return
-        customers = listOf(
-            CustomerRecord(
-                name = name.trim(),
-                inquiryType = inquiry,
-                status = "New Inquiry",
-                priority = "MEDIUM",
-                nextAction = "Contact customer"
-            )
-        ) + customers
-    }
-}
+private class LegacyCrmViewModel : ViewModel()
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,7 +47,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun CreditCardCrmApp(vm: CrmViewModel = viewModel()) {
+private fun CreditCardCrmApp(vm: CrmViewModel = viewModel(factory = CrmViewModelFactory(LocalContext.current))) {
     var screen by remember { mutableStateOf("dashboard") }
     var selectedCustomer by remember { mutableStateOf<CustomerRecord?>(null) }
     var showAdd by remember { mutableStateOf(false) }
