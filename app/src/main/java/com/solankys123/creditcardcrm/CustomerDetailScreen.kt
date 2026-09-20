@@ -106,7 +106,10 @@ object CustomerDetailFixtures {
 @Composable
 fun CustomerDetailScreen(
     customer: CustomerRecord,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onEdit: (CustomerRecord) -> Unit,
+    onDelete: () -> Unit,
+    onOpenFollowUps: () -> Unit
 ) {
     val detail = CustomerDetailFixtures.forCustomer(customer)
 
@@ -141,9 +144,10 @@ fun CustomerDetailScreen(
                 Text("Next Action", style = MaterialTheme.typography.titleMedium)
                 Text(detail.base.nextAction)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = {}) { Text("Call") }
-                    OutlinedButton(onClick = {}) { Text("Follow-up") }
-                    OutlinedButton(onClick = {}) { Text("Add Note") }
+                    OutlinedButton(onClick = { onEdit(customer) }) { Text("Edit") }
+                    OutlinedButton(onClick = onDelete) { Text("Delete") }
+                    OutlinedButton(onClick = onOpenFollowUps) { Text("Follow-up") }
+                    OutlinedButton(onClick = { onEdit(customer) }) { Text("Edit") }
                 }
             }
 
