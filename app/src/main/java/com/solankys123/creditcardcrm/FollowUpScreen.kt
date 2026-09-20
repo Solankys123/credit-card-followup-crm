@@ -120,6 +120,7 @@ private fun FollowUpEditorDialog(
     var dueAt by remember { mutableStateOf("Today, 4:00 PM") }
     var priority by remember { mutableStateOf("MEDIUM") }
     var error by remember { mutableStateOf("") }
+    val dueFormatOk = dueAt.matches(Regex("^(Today|Tomorrow|Upcoming|Overdue), [0-2]?[0-9]:[0-5][0-9] ?(AM|PM)$"))
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -148,6 +149,7 @@ private fun FollowUpEditorDialog(
                     customer.isBlank() -> error = "Customer is required"
                     reason.isBlank() -> error = "Reason is required"
                     dueAt.isBlank() -> error = "Due time is required"
+                    !dueFormatOk -> error = "Use format: Today, 4:00 PM"
                     else -> onSave(FollowUp(0, customer.trim(), reason.trim(), dueAt.trim(), priority))
                 }
             }) { Text("Save") }
