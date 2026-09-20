@@ -106,7 +106,7 @@ function editCustomer(name){
  const validators={
   name:function(e){const v=e.value.trim();if(!v)return"Full name is required.";if(v.length<2)return"Name must be at least 2 characters.";if(v.length>80)return"Name is too long.";if(!/^[A-Za-z][A-Za-z .'-]*$/.test(v))return"Name can contain letters, spaces, dot, apostrophe and hyphen only.";return""},
   ph:function(e){const v=e.value.trim();if(!/^\d{10}$/.test(v))return"Phone number must be exactly 10 digits.";if(!/^[6-9]/.test(v))return"Enter a valid Indian mobile number starting with 6, 7, 8 or 9.";return""},
-  email:function(e){const v=e.value.trim();if(!v)return"";if(v.length>254||!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(v))return"Enter a valid email address.";return""},
+  email:function(e){const v=e.value.trim();if(!v)return"";if(v.length>254||!/^[^\s@]+@[^\s@]+\\.[^\s@]{2,}$/.test(v))return"Enter a valid email address.";return""},
   pan:function(e){const v=e.value.trim().toUpperCase();e.value=v;if(!v)return"";if(!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(v))return"PAN must be 10 characters, e.g. ABCDE1234F.";return""},
   mother:function(e){const v=e.value.trim();if(!v)return"";if(v.length>80||!/^[A-Za-z][A-Za-z .'-]*$/.test(v))return"Enter a valid name using letters, spaces, dot, apostrophe or hyphen only.";return""}
  };
