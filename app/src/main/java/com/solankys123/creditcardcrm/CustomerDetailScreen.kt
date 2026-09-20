@@ -20,6 +20,7 @@ import androidx.compose.material3.TextButton
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
@@ -116,6 +117,7 @@ fun CustomerDetailScreen(
     onLogActivity: (ActivityEvent) -> Unit = {}
 ) {
     val detail = CustomerDetailFixtures.forCustomer(customer)
+    val context = LocalContext.current
 
     fun logActivity(type: String, detailText: String) {
         onLogActivity(ActivityEvent(0, customer.id, customer.name, type, detailText, java.time.LocalDateTime.now().toString()))
@@ -155,7 +157,7 @@ fun CustomerDetailScreen(
                     OutlinedButton(onClick = {
                         logActivity("CALL", "Call initiated")
                         val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + customer.phone))
-                        // The screen remains safe if no dialer is available.
+                        runCatching { context.startActivity(intent) }
                     }) { Text("Call") }
                     OutlinedButton(onClick = { onEdit(customer) }) { Text("Edit") }
                     OutlinedButton(onClick = onDelete) { Text("Delete") }
