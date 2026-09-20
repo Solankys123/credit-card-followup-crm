@@ -69,13 +69,17 @@ private fun CreditCardCrmApp(
             }
             "followups" -> FollowUpScreen(
                 followUps = followUps,
+                customers = customers,
                 onBack = { screen = if (selectedCustomer == null) "dashboard" else "detail" },
                 onOpenCustomer = { name ->
                     customers.firstOrNull { it.name == name }?.let {
                         selectedCustomer = it
                         screen = "detail"
                     }
-                }
+                },
+                onAddFollowUp = vm::addFollowUp,
+                onCompleteFollowUp = vm::completeFollowUp,
+                onDeleteFollowUp = vm::deleteFollowUp
             )
             else -> DashboardScreen(
                 customers = customers,
