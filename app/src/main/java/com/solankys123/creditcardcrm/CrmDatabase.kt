@@ -42,12 +42,18 @@ interface CustomerDao {
     suspend fun delete(customer: CustomerEntity)
     @androidx.room.Query("SELECT COUNT(*) FROM customers")
     suspend fun count(): Int
+
+    @androidx.room.Query("SELECT * FROM customers WHERE id = :id LIMIT 1")
+    suspend fun getById(id: Long): CustomerEntity?
 }
 
 @androidx.room.Dao
 interface FollowUpDao {
     @androidx.room.Query("SELECT * FROM follow_ups ORDER BY dueAt ASC")
     suspend fun getAll(): List<FollowUpEntity>
+
+    @androidx.room.Query("SELECT * FROM follow_ups WHERE customerName = :customerName AND completed = 0 ORDER BY dueAt ASC")
+    suspend fun getPendingForCustomer(customerName: String): List<FollowUpEntity>
     @androidx.room.Insert
     suspend fun insert(followUp: FollowUpEntity): Long
     @androidx.room.Update
