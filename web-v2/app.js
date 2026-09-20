@@ -96,6 +96,21 @@ function rescheduleFollowup(id){
  x.due=date+"T"+time;x.status="OPEN";x.rescheduledAt=new Date().toISOString();saveFollowups(list);render();
 }
 function openC(n){sel=C.find(x=>x.n===n);page="detail";render()}function render(){loadCustomers();if(page==="dash")dash();else if(page==="cust")cust();else if(page==="add"){window.CrmAddCustomer.open()}else if(page==="detail"&&sel)detail();else follow()}render();
+function deleteCustomer(name){
+ const customer=C.find(function(x){return x.n===name});
+ if(!customer)return;
+ const ok=window.confirm("Delete customer \"" + name.replace(/"/g,'\\\"') + "\"? This will also remove their follow-ups.");
+ if(!ok)return;
+ C=C.filter(function(x){return x.n!==name});
+ localStorage.setItem("crm_customers",JSON.stringify(C));
+ const followups=getFollowups().filter(function(x){return x.customer!==name&&x.customerName!==name&&x.name!==name});
+ localStorage.setItem("crm_followups",JSON.stringify(followups));
+ sel=null;
+ page="cust";
+ render();
+ alert("Customer deleted successfully");
+}
+
 function editCustomer(name){
  const c=C.find(function(x){return x.n===name}); if(!c)return;
  const esc=function(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")};
