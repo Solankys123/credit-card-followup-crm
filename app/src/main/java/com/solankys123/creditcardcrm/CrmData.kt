@@ -14,6 +14,22 @@ data class CustomerRecord(
     val note: String = ""
 )
 
+data class DocumentItem(
+    val id: Long = 0,
+    val customerId: Long,
+    val type: String,
+    val status: String,
+    val note: String = ""
+)
+
+data class IssueItem(
+    val id: Long = 0,
+    val customerId: Long,
+    val title: String,
+    val status: String,
+    val note: String = ""
+)
+
 data class ActivityEvent(
     val id: Long = 0,
     val customerId: Long,
@@ -71,8 +87,8 @@ object SampleData {
     )
 
     val followUps = listOf(
-        FollowUp("Rahul Sharma", "Salary slip pending", "Today, 4:00 PM", "HIGH"),
-        FollowUp("Amit Verma", "Callback requested", "Today, 5:00 PM", "MEDIUM"),
-        FollowUp("Neha Singh", "Verification status", "Tomorrow, 11:00 AM", "MEDIUM")
+        FollowUp(customerName="Rahul Sharma", reason="Salary slip pending", dueAt="Today, 4:00 PM", priority="HIGH"),
+        FollowUp(customerName="Amit Verma", reason="Callback requested", dueAt="Today, 5:00 PM", priority="MEDIUM"),
+        FollowUp(customerName="Neha Singh", reason="Verification status", dueAt="Tomorrow, 11:00 AM", priority="MEDIUM")
     )
 }
