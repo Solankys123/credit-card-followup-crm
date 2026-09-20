@@ -38,6 +38,7 @@ private fun CreditCardCrmApp(
     var selectedCustomer by remember { mutableStateOf<CustomerRecord?>(null) }
     var showAdd by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
+    var selectedActivities by remember { mutableStateOf<List<ActivityEvent>>(emptyList()) }
 
     // Keep detail screen synchronized with the DB after edits.
     LaunchedEffect(customers, selectedCustomer?.id) {
@@ -70,7 +71,15 @@ private fun CreditCardCrmApp(
                         selectedCustomer = null
                         screen = "customers"
                     },
-                    onOpenFollowUps = { screen = "followups" }
+                    onOpenFollowUps = {
+                        selectedActivities = emptyList()
+                        screen = "followups"
+                    },
+                    activities = selectedActivities,
+                    onLogActivity = { event ->
+                        vm.logActivity(event)
+                        selectedActivities = selectedActivities + event
+                    }
                 )
             }
             "followups" -> FollowUpScreen(
