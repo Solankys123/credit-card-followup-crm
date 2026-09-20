@@ -19,7 +19,7 @@ let page="dash",sel=null,q="",priority="ALL";
 function bd(p){return '<span class="badge '+p.toLowerCase()+'">'+p+'</span>'}
 function shell(body,acts=""){document.getElementById("app").innerHTML='<div class="shell"><div class="top"><div><div class="brand">Credit Card CRM</div><div class="sub">Smart Follow-Up Workspace • Synthetic QA Data</div></div><div class="actions">'+acts+'</div></div>'+body+'</div>'}
 function stat(n,l,k=""){return '<div class="metric"><b>'+n+'</b><span>'+l+'</span>'+(k?'<em>'+k+'</em>':'')+'</div>'}
-function cc(c){return '<div class="card customer"><div class="customer-main"><div class="name">'+c.n+'</div><div class="muted">'+c.i+' • '+c.src+' • '+c.cat+'</div>'+bd(c.p)+'<span class="badge blue">'+c.s+'</span><div class="small">Next: '+c.a+'</div></div><div class="actions"><button class="alt" onclick="openC(\''+c.n+'\')">View</button><button onclick="page=\'follow\';render()">Follow-up</button></div></div>'}
+function cc(c){return '<div class="card customer"><div class="customer-main"><div class="name">'+c.n+'</div><div class="muted">'+c.i+' • '+c.src+' • '+c.cat+'</div>'+bd(c.p)+'<span class="badge blue">'+c.s+'</span><div class="small">Next: '+c.a+'</div></div><div class="actions"><button class="alt" onclick="openC(\''+c.n+'\')">View</button><button class="alt" onclick="editCustomer(\''+c.n+'\')">Edit</button><button class="danger" onclick="deleteCustomer(\''+c.n+'\')">Delete</button><button onclick="page=\'follow\';render()">Follow-up</button></div></div>'}
 function progress(label,val,total){let pct=total?Math.round(val/total*100):0;return '<div class="prog-row"><div class="prog-label"><span>'+label+'</span><b>'+val+'</b></div><div class="bar"><i style="width:'+pct+'%"></i></div></div>'}
 function dash(){
  const overdue=1,today=1,upcoming=3,pendingDocs=C.filter(c=>c.s.includes("Documents")).length,pendingIssues=C.filter(c=>c.issue).length,active=C.filter(c=>["Application Started","Documents Pending","Documents Submitted","On Hold"].includes(c.s)).length;
@@ -30,4 +30,32 @@ function dash(){
 function cust(){let arr=C.filter(c=>(c.n+c.i+c.s+c.app+c.src+c.cat).toLowerCase().includes(q.toLowerCase()));shell('<div class="section"><input class="search" placeholder="Search name, application, status, source..." value="'+q+'" oninput="q=this.value;cust()"></div><div class="section"><div class="head"><h2>Customer Queue</h2><span class="muted">'+arr.length+' records</span></div><div class="list">'+arr.map(cc).join("")+'</div></div>','<button class="alt" onclick="page=\'dash\';render()">Dashboard</button><button onclick="page=\'follow\';render()">Follow-ups</button>')}
 function detail(){let c=sel;shell('<div class="row"><div class="card pad"><h2>'+c.n+'</h2><div class="muted">'+c.i+' • '+c.cat+' • '+c.src+'</div>'+bd(c.p)+'<span class="badge blue">'+c.s+'</span><div class="section"><div class="kv"><b>Application</b><span>'+(c.app||"Not started")+'</span><b>Phone</b><span>'+c.ph+'</span><b>YONO</b><span>'+c.y+'</span><b>Next action</b><span>'+c.a+'</span><b>Issue</b><span>'+(c.issue||"None")+'</span></div></div><div class="section actions"><button>📞 Call</button><button class="alt" onclick="page=\'follow\';render()">📅 Follow-up</button><button class="alt">💬 WhatsApp</button></div></div><div class="card pad"><h3>Documents</h3><p>✓ PAN</p><p>✓ Address Proof</p><p>'+(c.issue?'⏳ Income Proof — Pending':'✓ Income Proof')+'</p><h3>Customer Note</h3><p class="muted">'+c.note+'</p></div></div><div class="section card pad"><div class="head"><h2>Activity Timeline</h2><button class="alt">＋ Add Note</button></div><div class="timeline"><div class="event"><b>20 Sep — Customer contacted</b><span class="small">Conversation recorded.</span></div><div class="event"><b>20 Sep — Follow-up scheduled</b><span class="small">'+c.a+'</span></div><div class="event"><b>19 Sep — Application update</b><span class="small">'+(c.app||"Inquiry stage")+'</span></div></div></div>','<button class="alt" onclick="page=\'cust\';render()">← Customers</button><button onclick="page=\'follow\';render()">Follow-ups</button>')}
 function follow(){const counts={active:F.length,high:F.filter(x=>x.p==="HIGH").length,over:F.filter(x=>x.type==="Overdue").length};shell('<div class="grid stats">'+stat(counts.active,"Active follow-ups")+stat(counts.high,"High priority")+stat(counts.over,"Overdue")+stat(0,"Completed today")+'</div><div class="section"><div class="head"><h2>Follow-up queue</h2><div class="filters"><span class="badge blue">Today</span><span class="badge high">Overdue</span><span class="badge medium">Upcoming</span></div></div><div class="list">'+F.map(x=>'<div class="card customer"><div><div class="name">'+x.n+'</div><div class="muted">'+x.r+'</div>'+bd(x.p)+'<div class="small">Due: '+x.t+' • '+x.type+'</div></div><div class="actions"><button class="alt" onclick="openC(\''+x.n+'\')">Customer</button><button onclick="alert(\'Marked done in prototype\')">✓ Done</button><button class="alt" onclick="alert(\'Reschedule action in next workflow step\')">Reschedule</button></div></div>').join("")+'</div></div>','<button class="alt" onclick="page=\'dash\';render()">Dashboard</button><button onclick="page=\'cust\';render()">Customers</button>')}
+function editCustomer(n){
+ const index=C.findIndex(function(item){return item.n===n;});
+ if(index<0)return;
+ sel=C[index];
+ const value=function(key){return String(sel[key]==null?"":sel[key]).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");};
+ const names=[["Full name","n"],["Phone","ph"],["Email","email"],["PAN","pan"],["Date of Birth","dob"],["Mother's name","mother"],["Current address","address"],["Office name","office"],["Office address","officeAddress"],["Category / Card","cat"],["Inquiry type","i"],["Source","src"],["YONO available","y"],["Existing card","existing"],["Existing card note","existingNote"],["Application / reference no.","app"],["Application status","s"],["Pending reason","pending"],["Process notes","processNotes"],["Priority","p"],["Next follow-up","a"],["Customer notes","note"]];
+ let html="";
+ names.forEach(function(item){html+='<label>'+item[0]+'<input id="ed_'+item[1]+'" value="'+value(item[1])+'"></label>';});
+ shell('<div class="section"><div class="card pad"><div class="head"><div><h2>Edit Customer</h2><span class="muted">Update all saved details</span></div></div><form onsubmit="saveEdit(event)"><div class="form-grid">'+html+'</div><div class="actions"><button type="submit">Save Changes</button><button type="button" class="alt" onclick="page=&quot;cust&quot;;render()">Cancel</button></div></form></div></div>','<button class="alt" onclick="page=&quot;cust&quot;;render()">Customers</button>');
+}
+function saveEdit(event){
+ event.preventDefault();
+ const keys=["n","ph","email","pan","dob","mother","address","office","officeAddress","cat","i","src","y","existing","existingNote","app","s","pending","processNotes","p","a","note"];
+ keys.forEach(function(key){const el=document.getElementById("ed_"+key);if(el)sel[key]=el.value.trim();});
+ localStorage.setItem("crm_customers",JSON.stringify(C));
+ page="cust";render();
+}
+function deleteCustomer(n){
+ const index=C.findIndex(function(item){return item.n===n;});
+ if(index<0)return;
+ const name=C[index].n;
+ if(window.confirm("Delete "+name+"? This cannot be undone.")){
+  C.splice(index,1);
+  localStorage.setItem("crm_customers",JSON.stringify(C));
+  if(sel&&sel.n===name)sel=null;
+  page="cust";render();
+ }
+}
 function openC(n){sel=C.find(x=>x.n===n);page="detail";render()}function render(){if(page==="dash")dash();else if(page==="cust")cust();else if(page==="add"){window.CrmAddCustomer.open()}else if(page==="detail"&&sel)detail();else follow()}render();
