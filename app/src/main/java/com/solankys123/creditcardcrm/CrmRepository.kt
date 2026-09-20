@@ -18,7 +18,7 @@ class CrmRepository(private val db: CrmDatabase) {
     }
 
     suspend fun followUps(): List<FollowUp> = db.followUpDao().getAll().map {
-        FollowUp(it.customerName,it.reason,it.dueAt,it.priority,it.completed)
+        FollowUp(it.id,it.customerName,it.reason,it.dueAt,it.priority,it.completed)
     }
 
     suspend fun seedIfEmpty() {
@@ -37,6 +37,46 @@ class CrmRepository(private val db: CrmDatabase) {
                 ))
             }
         }
+    }
+
+    suspend fun addFollowUp(followUp: FollowUp) {
+        db.followUpDao().insert(
+            FollowUpEntity(
+                customerName = followUp.customerName.trim(),
+                reason = followUp.reason.trim(),
+                dueAt = followUp.dueAt.trim(),
+                priority = followUp.priority.trim().ifBlank { "MEDIUM" },
+                completed = false
+            )
+        )
+    }
+
+    suspend fun completeFollowUp(followUp: FollowUp) {
+        if (followUp.id == 0L) return
+        db.followUpDao().update(
+            FollowUpEntity(
+                id = followUp.id,
+                customerName = followUp.customerName,
+                reason = followUp.reason,
+                dueAt = followUp.dueAt,
+                priority = followUp.priority,
+                completed = true
+            )
+        )
+    }
+
+    suspend fun deleteFollowUp(followUp: FollowUp) {
+        if (followUp.id == 0L) return
+        db.followUpDao().delete(
+            FollowUpEntity(
+                id = followUp.id,
+                customerName = followUp.customerName,
+                reason = followUp.reason,
+                dueAt = followUp.dueAt,
+                priority = followUp.priority,
+                completed = followUp.completed
+            )
+        )
     }
 
     suspend fun addCustomer(customer: CustomerRecord) {
@@ -89,3 +129,4 @@ class CrmRepository(private val db: CrmDatabase) {
         ))
     }
 }
+
