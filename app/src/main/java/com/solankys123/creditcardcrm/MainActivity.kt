@@ -246,8 +246,15 @@ private fun CustomerEditorDialog(
         },
         confirmButton = {
             Button(onClick = {
-                if (name.isBlank()) {
-                    error = "Customer name is required"
+                val cleanPhone = phone.trim()
+                val nameOk = name.trim().matches(Regex("^[A-Za-z .'-]{2,80}$"))
+                val phoneOk = cleanPhone.isBlank() || cleanPhone.matches(Regex("^[6-9][0-9]{9}$")) || cleanPhone.matches(Regex("^[0-9Xx]{6,15}$"))
+                if (!nameOk) {
+                    error = "Use a valid customer name"
+                } else if (!phoneOk) {
+                    error = "Phone must be 10 digits starting 6-9"
+                } else if (priority.trim().uppercase() !in setOf("HIGH", "MEDIUM", "LOW")) {
+                    error = "Priority must be HIGH, MEDIUM or LOW"
                 } else {
                     onSave(CustomerRecord(
                         id = initial?.id ?: 0L,
