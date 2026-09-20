@@ -1,6 +1,7 @@
 package com.solankys123.creditcardcrm
 
 data class CustomerRecord(
+    val id: Long = 0,
     val name: String,
     val inquiryType: String,
     val status: String,
