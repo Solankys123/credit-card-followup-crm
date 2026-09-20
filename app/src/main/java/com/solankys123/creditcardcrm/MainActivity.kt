@@ -33,15 +33,16 @@ private fun CreditCardCrmApp(
 ) {
     val customers by vm.customers.collectAsStateWithLifecycle()
     val followUps by vm.followUps.collectAsStateWithLifecycle()
+    val activities by vm.activities.collectAsStateWithLifecycle()
 
     var screen by remember { mutableStateOf("dashboard") }
     var selectedCustomer by remember { mutableStateOf<CustomerRecord?>(null) }
     var showAdd by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
-    var selectedActivities by remember { mutableStateOf<List<ActivityEvent>>(emptyList()) }
 
     // Keep detail screen synchronized with the DB after edits.
     LaunchedEffect(customers, selectedCustomer?.id) {
+        selectedCustomer?.id?.let { vm.loadActivities(it) }
         selectedCustomer?.let { selected ->
             selectedCustomer = customers.firstOrNull { it.id == selected.id }
             if (selectedCustomer == null) screen = "customers"
@@ -71,15 +72,9 @@ private fun CreditCardCrmApp(
                         selectedCustomer = null
                         screen = "customers"
                     },
-                    onOpenFollowUps = {
-                        selectedActivities = emptyList()
-                        screen = "followups"
-                    },
-                    activities = selectedActivities,
-                    onLogActivity = { event ->
-                        vm.logActivity(event)
-                        selectedActivities = selectedActivities + event
-                    }
+                    onOpenFollowUps = { screen = "followups" },
+                    activities = activities,
+                    onLogActivity = vm::logActivity
                 )
             }
             "followups" -> FollowUpScreen(
