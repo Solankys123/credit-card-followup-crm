@@ -1,6 +1,8 @@
 package com.solankys123.creditcardcrm
 
 import android.os.Bundle
+import android.Manifest
+import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
@@ -17,6 +19,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        NotificationScheduler.schedule(this)
+        if (Build.VERSION.SDK_INT >= 33 && !NotificationScheduler.hasNotificationPermission(this)) {
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1001)
+        }
         setContent { CreditCardCrmApp() }
     }
 }
