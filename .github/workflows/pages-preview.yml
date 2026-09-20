@@ -4,24 +4,22 @@ on:
   push:
     branches:
       - main
-      - "feature/android-mvp"
+      - "feature/**"
+  workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 jobs:
-  deploy:
+  preview:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Upload preview artifact
+        uses: actions/upload-artifact@v4
         with:
-          path: ./web
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          name: credit-card-crm-web-preview
+          path: web/
+          if-no-files-found: error
