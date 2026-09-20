@@ -30,6 +30,24 @@ data class ActivityEventEntity(
     val createdAt: String
 )
 
+@Entity(tableName = "documents")
+data class DocumentEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val customerId: Long,
+    val type: String,
+    val status: String,
+    val note: String = ""
+)
+
+@Entity(tableName = "issues")
+data class IssueEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val customerId: Long,
+    val title: String,
+    val status: String,
+    val note: String = ""
+)
+
 @Entity(tableName = "follow_ups")
 data class FollowUpEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -67,6 +85,24 @@ interface ActivityEventDao {
 }
 
 @androidx.room.Dao
+interface DocumentDao {
+    @androidx.room.Query("SELECT * FROM documents WHERE customerId = :customerId ORDER BY id DESC")
+    suspend fun getForCustomer(customerId: Long): List<DocumentEntity>
+    @androidx.room.Insert suspend fun insert(item: DocumentEntity): Long
+    @androidx.room.Update suspend fun update(item: DocumentEntity)
+    @androidx.room.Delete suspend fun delete(item: DocumentEntity)
+}
+
+@androidx.room.Dao
+interface IssueDao {
+    @androidx.room.Query("SELECT * FROM issues WHERE customerId = :customerId ORDER BY id DESC")
+    suspend fun getForCustomer(customerId: Long): List<IssueEntity>
+    @androidx.room.Insert suspend fun insert(item: IssueEntity): Long
+    @androidx.room.Update suspend fun update(item: IssueEntity)
+    @androidx.room.Delete suspend fun delete(item: IssueEntity)
+}
+
+@androidx.room.Dao
 interface FollowUpDao {
     @androidx.room.Query("SELECT * FROM follow_ups ORDER BY dueAt ASC")
     suspend fun getAll(): List<FollowUpEntity>
@@ -81,11 +117,13 @@ interface FollowUpDao {
     suspend fun delete(followUp: FollowUpEntity)
 }
 
-@Database(entities = [CustomerEntity::class, FollowUpEntity::class, ActivityEventEntity::class], version = 2, exportSchema = false)
+@Database(entities = [CustomerEntity::class, FollowUpEntity::class, ActivityEventEntity::class, DocumentEntity::class, IssueEntity::class], version = 3, exportSchema = false)
 abstract class CrmDatabase : RoomDatabase() {
     abstract fun customerDao(): CustomerDao
     abstract fun followUpDao(): FollowUpDao
     abstract fun activityEventDao(): ActivityEventDao
+    abstract fun documentDao(): DocumentDao
+    abstract fun issueDao(): IssueDao
 
     companion object {
         @Volatile private var INSTANCE: CrmDatabase? = null
